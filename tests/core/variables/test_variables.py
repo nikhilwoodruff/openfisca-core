@@ -473,3 +473,17 @@ def test_unexpected_attr():
 
     with raises(ValueError):
         tax_benefit_system.add_variable(variable_with_strange_attr)
+
+
+def test_variable_metadata_allowed():
+    """
+    Test that providing a metadata dictionary attribute
+    does not raise an exception
+    """
+    class variable_with_metadata(Variable):
+        value_type = int
+        entity = Person
+        definition_period = MONTH
+        metadata = {}
+
+    tax_benefit_system.add_variable(variable_with_metadata)

@@ -93,6 +93,10 @@ class Variable:
        .. attribute:: documentation
 
            Free multilines text field describing the variable context and usage.
+
+       .. attribute:: metadata
+
+           Free dictionary for custom metadata attributes.
     """
 
     def __init__(self, baseline_variable = None):
@@ -122,6 +126,7 @@ class Variable:
         self.cerfa_field = self.set(attr, 'cerfa_field', allowed_type = (str, dict))
         self.unit = self.set(attr, 'unit', allowed_type = str)
         self.documentation = self.set(attr, 'documentation', allowed_type = str, setter = self.set_documentation)
+        self.metadata = self.set(attr, "metadata", allowed_type = dict)
         self.set_input = self.set_set_input(attr.pop('set_input', None))
         self.calculate_output = self.set_calculate_output(attr.pop('calculate_output', None))
         self.is_period_size_independent = self.set(attr, 'is_period_size_independent', allowed_type = bool, default = config.VALUE_TYPES[self.value_type]['is_period_size_independent'])
