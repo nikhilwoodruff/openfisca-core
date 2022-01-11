@@ -2,7 +2,9 @@ import copy
 import os
 import typing
 
-from openfisca_core import commons, parameters, tools
+import numpy as np
+
+from openfisca_core import commons, parameters, periods, tools
 from openfisca_core.errors import ParameterParsingError
 from openfisca_core.parameters import config, helpers, AtInstantLike
 from openfisca_core.taxscales import (
@@ -118,3 +120,61 @@ class ParameterScale(AtInstantLike):
                     threshold = bracket.threshold
                     scale.add_bracket(threshold, rate * base)
             return scale
+
+
+class IndexableParameterScale(ParameterScale):
+    def _bracket_is_indexed(self, bracket):
+        return isinstance(bracket, parameters.ParameterNode)
+
+    def _get_indexable_values(self):
+        indices_found = []
+        for bracket in self.brackets:
+            for key in ("rate", "amount", "threshold"):
+                if hasattr(bracket, key):
+                    # Determine if the bracket variable is indexed or has time-period children
+                    if self._bracket_is_indexed(getattr(bracket, key)):
+                        indices_found += list(getattr(bracket, key).children.keys())
+        return indices_found
+
+    def _get_indexed_copy(self, index):
+        scale = ParameterScale.__new__(ParameterScale)
+        for key in super()._allowed_keys:
+            if hasattr(self, key):
+                setattr(scale, key, getattr(self, key))
+        for bracket in self.brackets:
+            for key in ("rate", "amount", "threshold"):
+                if hasattr(bracket, key):
+                    if self._bracket_is_indexed(getattr(bracket, key)):
+                        setattr(bracket, key, getattr(getattr(bracket, key), index))
+                        del bracket.children[key][index]
+        return scale
+
+    def _get_at_instant(self, instant):
+        indexable_values = self._get_indexable_values()
+        indexed_scales = {
+            value: self._get_indexed_copy(value) for value in indexable_values
+        }
+        scales_at_instant = {value: scale._get_at_instant(instant) for value, scale in indexed_scales.items()}
+        return IndexableParameterScaleAtInstant(scales_at_instant)
+
+
+class IndexableParameterScaleAtInstant:
+    allowed_keys = ("value_to_scale",)
+
+    def __init__(self, value_to_scale: dict = None):
+        self.value_to_scale = value_to_scale
+
+    def __getitem__(self, key):
+        return IndexedParameterScaleAtInstant(self.value_to_scale, key)
+
+class IndexedParameterScaleAtInstant:
+    allowed_keys = ("value_to_scale", "index")
+
+    def __init__(self, value_to_scale: dict = None, index = None):
+        self.value_to_scale = value_to_scale
+        self.index = index
+    
+    def calc(self, tax_base):
+        # Produce a (num_entities x num_categories) array of values
+        result_by_index = np.array([scale.calc(tax_base) for scale in self.value_to_scale.values()])
+        return result_by_index

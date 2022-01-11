@@ -1,0 +1,9 @@
+description: Parameter scale indexed by a string
+brackets:
+  - rate: 
+      2010-01-01: 0.1
+    threshold:
+      A:
+        2010-01-01: 10_000
+      B:
+        2010-01-01: 20_000

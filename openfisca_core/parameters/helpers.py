@@ -62,12 +62,21 @@ def _parse_child(child_name, child, child_path):
     if 'values' in child:
         return parameters.Parameter(child_name, child, child_path)
     elif 'brackets' in child:
+        # Check if the scale is indexable - if so, cast it to the special case (IndexableParameterScale)
+        if any(map(_bracket_data_is_indexed, child['brackets'])):
+            return parameters.IndexableParameterScale(child_name, child, child_path)
         return parameters.ParameterScale(child_name, child, child_path)
     elif isinstance(child, dict) and all([periods.INSTANT_PATTERN.match(str(key)) for key in child.keys()]):
         return parameters.Parameter(child_name, child, child_path)
     else:
         return parameters.ParameterNode(child_name, data = child, file_path = child_path)
 
+def _bracket_data_is_indexed(bracket: dict):
+    for key in ("threshold", "rate", "amount"):
+        if isinstance(bracket, dict) and key in bracket and isinstance(bracket[key], dict):
+            if not all([periods.INSTANT_PATTERN.match(str(subkey)) for subkey in bracket[key].keys()]):
+                return True
+    return False
 
 def _set_backward_compatibility_metadata(parameter, data):
     if data.get('unit') is not None:
