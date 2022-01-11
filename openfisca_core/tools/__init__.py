@@ -34,6 +34,8 @@ def assert_near(value, target_value, absolute_error_margin = None, message = '',
         assert_datetime_equals(value, target_value, message)
     if isinstance(target_value, str):
         target_value = eval_expression(target_value)
+        if isinstance(target_value, str):
+            assert value == target_value, '{}{} differs from {}.'.format(message, value, target_value)
 
     target_value = np.array(target_value).astype(np.float32)
 
