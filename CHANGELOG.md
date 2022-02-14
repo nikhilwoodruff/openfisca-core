@@ -1,5 +1,11 @@
 # Changelog
 
+### 35.7.7 [#1086](https://github.com/openfisca/openfisca-core/pull/1086)
+
+#### Technical changes
+
+- Fix bug causing Enum variables to lose their status when projected between entities.
+
 ### 35.7.6 [#1065](https://github.com/openfisca/openfisca-core/pull/1065)
 
 #### Technical changes
